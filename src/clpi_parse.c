@@ -63,6 +63,12 @@ int read_clpi(const char *filename, clpi_t *cl) {
 			seq->atc[i].stc[j].spn_stc_start = get32bit(buf, pos2 + 2);
 			seq->atc[i].stc[j].start_time = get32bit(buf, pos2 + 6);
 			seq->atc[i].stc[j].end_time = get32bit(buf, pos2 + 10);
+			pos2 += 14;
+			seq->atc[i].stc[j].time0 = 0;
+			seq->atc[i].stc[j].time1 = (seq->atc[i].stc[j].end_time - seq->atc[i].stc[j].start_time) / 45000.0;
+			//if (seq->atc[i].stc_len != 0) {
+			//	seq->atc[i].stc[j].time0 = seq->atc[i].stc[seq->atc[i].stc_len - 1].time1;
+			//}
 		}
 	}
 	//ProgramInfo

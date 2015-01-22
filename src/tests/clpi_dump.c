@@ -61,6 +61,8 @@ int main(int argc, char **argv) {
 			printf("\t\t\tSPN STC start:0x%lx\n", stc.spn_stc_start);
 			printf("\t\t\tstart time   :0x%ld\n", stc.start_time);
 			printf("\t\t\tend time     :0x%ld\n", stc.end_time);
+			printf("\t\t\ttime0        :%f\n", stc.time0);
+			printf("\t\t\ttime1        :%f\n", stc.time1);
 		}
 	}
 	printf("\t-----ProgramInfo-----\n");
