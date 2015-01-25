@@ -4,6 +4,8 @@ typedef struct {
 	unsigned long playarea_address;
 	int cpi;
 	int num_list;
+	int connection;
+	int stc_id;
 	char clpi_filename[6];
 	char clpi_codec_identifier[5];
 	unsigned long time_in;

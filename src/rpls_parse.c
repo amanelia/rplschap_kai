@@ -42,6 +42,8 @@ int read_rpls(const char *filename, rpls_t *rp) {
 	memcpy(rp->clpi_codec_identifier, &buf[0] + rp->playarea_address + 17, 4);
 	pos = rp->playarea_address + 8 + 2;
 	for (i = 0; i < rp->num_list; i++) {
+		rp->connection = buf[pos + 12];
+		rp->stc_id = buf[pos + 13];
 		rp->time_in = get32bit(buf, pos + 14);
 		rp->time_out = get32bit(buf, pos + 18);
 		pos += 22;

@@ -10,9 +10,14 @@
 #include <string.h>
 #include "rpls_parse.h"
 #include "clpi_parse.h"
+#include "util.h"
 
 rpls_t *rp;
 clpi_t *cl;
+
+//Chapters
+int num_chapter;
+unsigned long *chapter_timecode;
 
 int _conv_chapter_to_timecode(const double time, unsigned long *timecode) {
 	int i, j;
@@ -29,16 +34,69 @@ int _conv_chapter_to_timecode(const double time, unsigned long *timecode) {
 	return 0;
 }
 
+int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl) {
+	FILE *fp;
+	unsigned char buf[512];
+	unsigned char *inbuf;
+	int in_size, out_size;
+	unsigned char *outbuf;
+	fp = fopen(infile, "rb");
+	if (!fp) {
+		fprintf(stderr, "入力ファイル読み込みエラー.\n");
+		return 0;
+	}
+	fseek(fp, 0, SEEK_END);
+	in_size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	inbuf = malloc(sizeof(unsigned char) * in_size);
+	if (!inbuf) {
+		fprintf(stderr, "Unallocated memory\n");
+		return 0;
+	}
+	if (!fread(inbuf, sizeof(unsigned char), sizeof(unsigned char) * in_size, fp)) {
+		fprintf(stderr, "cannot read.\n");
+		return 0;
+	}
+	fclose(fp);
+	unsigned long start_addr = get32bit(inbuf, 0x0C);
+	unsigned long private_addr = get32bit(inbuf, 0x10);
+
+
+	free(inbuf);
+	return 1;
+}
+
 int _read_chapter(const char *filename) {
 	FILE *fp;
+	int count, i;
+	char buf[512];
 	fp = fopen(filename, "rt");
 	if (!fp) {
 		fprintf(stderr, "Cannot open timecode.\n");
 		return 0;
 	}
-	while (!feof(fp)) {
-		char buf[1024];
-		fgets(buf, 1000, fp);
+	count = 0;
+	while (fgets(buf, sizeof(buf), fp)) {
+		if (strlen(buf) < 12) break;
+		count++;
+	}
+	if (ferror(fp)) {
+		fprintf(stderr, "チャプタファイル読み込みエラー.\n");
+		return 0;
+	}
+	num_chapter = count;
+	if (num_chapter < 1) {
+		fprintf(stderr, "チャプターファイルにチャプタ記述がありません。\n");
+		return 0;
+	}
+	chapter_timecode = malloc(sizeof(unsigned long) * num_chapter);
+	if (!chapter_timecode) {
+		fprintf(stderr, "unallocated memory.\n");
+		return 0;
+	}
+	rewind(fp);
+	i = 0;
+	while (fgets(buf, sizeof(buf), fp)) {
 		if (strlen(buf) < 12) break;
 		int h, m, s, ms;
 		buf[12] = '\0'; ms = atoi(&buf[9]);
@@ -49,7 +107,13 @@ int _read_chapter(const char *filename) {
 		unsigned long timecode = 0L;
 		if (_conv_chapter_to_timecode(time, &timecode)) {
 			printf("time:%f PTS:%ld(0x%lx)\n", time, timecode, timecode);
+			memcpy(chapter_timecode + i, &timecode, sizeof(unsigned long));
+			i++;
 		}
+	}
+	if (ferror(fp)) {
+		fprintf(stderr, "チャプタファイル読み込みエラー.\n");
+		return 0;		
 	}
 	fclose(fp);
 	return 1;
@@ -73,6 +137,7 @@ int main(int argc, char **argv) {
 	//type 2:timecode
 	int type = 0;
 	char *rplsfile = '\0';
+	char *outrplsfile = '\0';
 	char *parent_dir = '\0';
 	char *clpifile = '\0';
 	char *m2tsfile = '\0';
@@ -138,6 +203,9 @@ int main(int argc, char **argv) {
 			}
 		} else {
 			printf("file %s\n", argv[i]);
+			if (rplsfile && !outrplsfile) {
+				outrplsfile = argv[i];
+			}
 			if (!rplsfile) {
 				rplsfile = argv[i];
 			}
@@ -189,6 +257,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "timecodeファイルの読み込みに失敗しました。\n");
 		return 0;
 	}
+	if (mode == 1) {
+
+	} else if (mode == 2) {
+		_write_rpls(rplsfile, outrplsfile, rp, cl);
+	}
+	if (chapter_timecode) free(chapter_timecode);
 	free(m2tsfile);
 	free(clpifile);
 	free(parent_dir);
