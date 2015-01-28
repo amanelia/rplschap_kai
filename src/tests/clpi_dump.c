@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 			printf("\t\t\tStreamPID:0x%02x\n", st.stream_pid);
 			if (st.codec_type == 0x02 || st.codec_type == 0x1b) {
 				printf("\t\t\tFormat   :0x%02x\n", st.format);
-				printf("\t\t\tFramerate:%f\n", fps_tables[st.frame_rate]);
+				printf("\t\t\tFramerate:%f(%d)\n", fps_tables[st.frame_rate], st.frame_rate);
 			}
 		}
 	}

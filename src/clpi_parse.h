@@ -28,6 +28,7 @@ typedef struct {
 	int m_offset_frame;
 	unsigned long max_stn;
 	unsigned long time0;
+	unsigned long m_time0;
 	unsigned int atc_len;
 	unsigned int epmap_len;
 	sequence_info_atc *atc;

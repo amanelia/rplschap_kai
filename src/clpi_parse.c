@@ -116,7 +116,7 @@ int read_clpi(const char *filename, clpi_t *cl) {
 	cpi->cpi_type = buf[pos + 5] & 0x0F;
 	pos += 6;
 	unsigned long ep_addr = pos;
-	printf("EP addr:0x%lx\n", ep_addr);
+	//printf("EP addr:0x%lx\n", ep_addr);
 	if (cpi->cpi_type == 1) {
 		cpi->num_pid = buf[pos + 1];
 		pos += 2;
@@ -133,6 +133,7 @@ int read_clpi(const char *filename, clpi_t *cl) {
 			cpi->st[i].ep_map_start_addr = get32bit(buf, pos + 8);
 			pos += 12;
 		}
+		int first = 0;
 		for (i = 0; i < cpi->num_pid; i++) {
 			pos = ep_addr + cpi->st[i].ep_map_start_addr;
 			unsigned long fine_addr = get32bit(buf, pos);
@@ -175,7 +176,7 @@ int read_clpi(const char *filename, clpi_t *cl) {
 			int k;
 			for (j = 0; j < cpi->st[i].num_coarse; j++) {
 				int start, end;
-				printf("Coarse: %d\n", j);
+				//printf("Coarse: %d\n", j);
 				start = coarse[j].ref_ep_fine_id;
 				if (j < cpi->st[i].num_coarse - 1) {
 					end = coarse[j + 1].ref_ep_fine_id;
@@ -185,7 +186,11 @@ int read_clpi(const char *filename, clpi_t *cl) {
 				for (k = start; k < end; k++) {
 					pts = ((coarse[j].pts_ep & ~0x01) << 19) + (fine[k].pts_ep << 9);
 					spn = (coarse[j].spn_ep & ~0x1FFFF) + fine[k].spn_ep;
-					printf("PTS:%ld/%ld SPN:%ld\n", pts, pts >> 1, spn);
+					if (!first) {
+						seq->m_time0 = (pts >> 1);
+						first = 1;
+					}
+					//printf("PTS:%ld/%ld SPN:%ld\n", pts, pts >> 1, spn);
 				}
 			}
 		}
