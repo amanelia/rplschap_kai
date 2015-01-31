@@ -113,6 +113,7 @@ int main(int argc, char **argv) {
 				printf("\t\t\tFine  :%d IOffset:%d PTS EP:%ld SPN EP:%ld\n", j, fine.i_end_position_offset, fine.pts_ep, fine.spn_ep);
 			}
 		}
+		gen_pts_spn(clpi, i, NULL);
 	}
 	free_clpi(clpi);
 	free(clpi);

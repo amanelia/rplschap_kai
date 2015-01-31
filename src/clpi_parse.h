@@ -100,6 +100,7 @@ typedef struct {
 static const double fps_tables[] = {0, 24000.0/1001, 24, 25, 30000.0/1001, 30, 50, 60000.0/1001, 60, 0, 0, 0, 0, 0, 0};
 
 int read_clpi(const char *filename, clpi_t *seq);
+int gen_pts_spn(const clpi_t *clpi, const int stream_id, ep_map *ep);
 void free_clpi(clpi_t *clpi);
 
 #endif

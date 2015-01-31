@@ -1,6 +1,6 @@
 /*
  * rplsChap kai
- * author amanelia
+ * Author amanelia
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,10 +36,10 @@ void print_hex(const unsigned char *b, const unsigned long len) {
 }
 
 //get framerate type from clpi file.
-int get_framerate_type() {
+int _get_framerate_type() {
 	int i,j;
 	if (!cl) {
-		fprintf(stderr, "uninitialized clpi struct.\n");
+		fprintf(stderr, "Uninitialized clpi struct.\n");
 		return 0;
 	}
 	for (i = 0; i < cl->prog->num_program; i++) {
@@ -96,7 +96,7 @@ int _conv_keyframe_to_timecode(const unsigned int frame, unsigned long *timecode
 		fprintf(stderr, "no framerate type!\n");
 		return 0;
 	}
-	//一応丸め処理？最大1ミリ秒のズレあり。
+	//丸め処理
 	int time = (frame / ((double)fps_num[frame_rate_type] / (double)fps_den[frame_rate_type]) * 1000.0);
 	double t_time = ((double) time / 1000.0);
 	_conv_chapter_to_timecode(t_time, timecode);
@@ -110,7 +110,7 @@ int _conv_timecode_to_keyframe(const unsigned long timecode, unsigned int *frame
 		return 0;
 	}
 	if (!_conv_timecode_to_chapter(timecode, &time)) {
-		fprintf(stderr, "cannot convert to chapter.\n");
+		fprintf(stderr, "Cannot convert to chapter.\n");
 		return 0;
 	}
 	*frame = (time + 0.0005 / 1000.0) * ((double)fps_num[frame_rate_type] / (double)fps_den[frame_rate_type]) + 0.5;
@@ -125,7 +125,7 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 	int i,pos;
 	fp = fopen(infile, "rb");
 	if (!fp) {
-		fprintf(stderr, "入力ファイル読み込みエラー.\n");
+		fprintf(stderr, "rplsファイルオープンエラー.\n");
 		return 0;
 	}
 	fseek(fp, 0, SEEK_END);
@@ -137,15 +137,15 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 		return 0;
 	}
 	if (!fread(inbuf, sizeof(unsigned char), sizeof(unsigned char) * in_size, fp)) {
-		fprintf(stderr, "cannot read.\n");
+		fprintf(stderr, "rplsファイル読み込みエラー.\n");
 		return 0;
 	}
 	fclose(fp);
 	unsigned long start_addr = get32bit(inbuf, 0x0C);
 	unsigned long private_addr = get32bit(inbuf, 0x10);
-	printf("inbuf_size:0x%x\n", in_size);
-	printf("StartAddr:0x%lx\n", start_addr);
-	printf("PrivAddr:0x%lx\n", private_addr);
+	printf("inbuf_size  :0x%x\n", in_size);
+	printf("StartAddr   :0x%lx\n", start_addr);
+	printf("PrivAddr    :0x%lx\n", private_addr);
 	int size = 46;
 	unsigned long playitem_len = 6 + size * num_chapter;
 	printf("should write:0x%lx\n", playitem_len);
@@ -170,6 +170,7 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 	}
 
 	//MarkerPrivateData address (pana)
+	//書き込まなくてもいい？
 	//outbuf[0x10] = (priv_data_addr & 0xFF000000) >> 24;
 	//outbuf[0x11] = (priv_data_addr & 0x00FF0000) >> 16;
 	//outbuf[0x12] = (priv_data_addr & 0x0000FF00) >> 8;
@@ -229,7 +230,7 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 		return 0;
 	}
 	if (!fwrite(outbuf, sizeof(unsigned char), sizeof(unsigned char) * out_size, fp)) {
-		fprintf(stderr, "書き込みエラー\n");
+		fprintf(stderr, "rpls書き込みエラー.\n");
 		return 0;
 	}
 	fclose(fp);
@@ -276,7 +277,8 @@ int _read_keyframe(const char *filename) {
 		unsigned int key = strtoul(buf, &e, 10);
 		unsigned long timecode = 0L;
 		if (_conv_keyframe_to_timecode(key, &timecode)) {
-			printf("keyframe:%d time:%ld\n", key, timecode);
+			//debug
+			//printf("keyframe:%d time:%ld\n", key, timecode);
 			memcpy(chapter_timecode + i, &timecode, sizeof(unsigned long));
 		}
 		i++;
@@ -325,7 +327,8 @@ int _read_chapter(const char *filename) {
 		double time = ms * 0.001 + s + m * 60 + h * 60 * 60;
 		unsigned long timecode = 0L;
 		if (_conv_chapter_to_timecode(time, &timecode)) {
-			printf("time:%f PTS:%ld(0x%lx)\n", time, timecode, timecode);
+			//debug
+			//printf("time:%f PTS:%ld(0x%lx)\n", time, timecode, timecode);
 			memcpy(chapter_timecode + i, &timecode, sizeof(unsigned long));
 			i++;
 		}
@@ -411,8 +414,8 @@ int main(int argc, char **argv) {
 	char *keyframefile = '\0';
 	if (argc < 2) {
 		printf("rplsChap kai ver. 1.0\n");
-		printf("author: amanelia ");
-		printf("respected by rplsChap.\n");
+		printf("Author: amanelia\n");
+		printf("Orignal software: rplsChap\n");
 		show_usage(argv[0]);
 		return 0;
 	}
@@ -422,22 +425,22 @@ int main(int argc, char **argv) {
 			switch (argv[i][1]) {
 			case 'o':
 				if (i == (argc - 1)) {
-					fprintf(stderr, "Invalid argument.\n");
+					fprintf(stderr, "引数が違います。\n");
 					return 0;
 				}
-				printf("ExtractOption:");
+				printf("チャプターファイルを抽出します。\n");
 				mode = 1;
 				if (argv[i][2] == 'k') {
-					printf("keyframe:%s\n", argv[i + 1]);
 					if (!keyframefile) {
 						keyframefile = argv[i + 1];
 					}
+					printf("keyframeファイル：%s\n", keyframefile);
 					type = 1;
 				} else if (argv[i][2] == 't') {
-					printf("timecode:%s\n", argv[i + 1]);
 					if (!chapterfile) {
 						chapterfile = argv[i + 1];
 					}
+					printf("timecodeファイル：%s\n", chapterfile);
 					type = 2;
 				} else {
 					printf("unknown\n");
@@ -446,12 +449,13 @@ int main(int argc, char **argv) {
 				break;
 			case 't':
 				if (i == (argc - 1)) {
-					fprintf(stderr, "Invalid argument.\n");
+					fprintf(stderr, "引数が違います。\n");
 					return 0;
 				}
-				printf("InsertOption:timecode:%s\n", argv[i + 1]);
+				printf("rplsファイルへtimecodeを書き込みます。\n");
 				if (!chapterfile) {
 					chapterfile = argv[i + 1];
+					printf("timecodeファイル：%s\n", chapterfile);
 				}
 				mode = 2;
 				type = 2;
@@ -459,28 +463,30 @@ int main(int argc, char **argv) {
 				break;
 			case 'k':
 				if (i == (argc - 1)) {
-					fprintf(stderr, "Invalid argument.\n");
+					fprintf(stderr, "引数が違います。\n");
 					return 0;
 				}
-				printf("InsertOption:keyframe:%s\n", argv[i + 1]);
+				printf("rplsファイルへkeyframeを書き込みます。\n");
 				if (!keyframefile) {
 					keyframefile = argv[i + 1];
+					printf("keyframeファイル：%s\n", keyframefile);
 				}
 				mode = 2;
 				type = 1;
 				next = 1;
 				break;
 			default:
-				fprintf(stderr, "Invalid switch.\n");
+				fprintf(stderr, "無効な引数が選択されました。\n");
 				return 0;
 			}
 		} else {
-			printf("file %s\n", argv[i]);
 			if (rplsfile && !outrplsfile) {
 				outrplsfile = argv[i];
+				printf("出力rplsファイルパス：%s\n", outrplsfile);
 			}
 			if (!rplsfile) {
 				rplsfile = argv[i];
+				printf("入力rplsファイルパス：%s\n", rplsfile);
 			}
 		}
 		if (next) i++;
@@ -498,7 +504,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "rplsファイルの読み込みに失敗しました。\n");
 		return 0;
 	}
-	printf("clpiFilename:%s\n", rp->clpi_filename);
+	printf("clpi番号：%s\n", rp->clpi_filename);
 	if (!strstr(rplsfile, "/BDAV/")) {
 		fprintf(stderr,"正常なBDAVディレクトリではありません。\n");
 		fprintf(stderr, "正しいディレクトリ構成にしてください。\n");
@@ -522,14 +528,13 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Unallocated memory.\n");
 		return 0;
 	}
-	printf("parentdir:%s\n", parent_dir);
-	printf("clpifile:%s\n", clpifile);
+	printf("BDAV親ディレクトリ：%s\n", parent_dir);
+	printf("clpiファイルパス　：%s\n", clpifile);
 	if (!read_clpi(clpifile, cl)) {
 		fprintf(stderr, "clpiファイルの読み込みに失敗しました。\n");
 		return 0;
 	}
-//get clpi framerate_type.
-	if (!get_framerate_type()) {
+	if (!_get_framerate_type()) {
 		fprintf(stderr, "フレームレート取得に失敗しました。\n");
 		return 0;
 	}

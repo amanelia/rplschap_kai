@@ -32,7 +32,7 @@ int _parse_pes(const unsigned char *buf, const unsigned long spn, pes_timestamp 
 		return 0;
 	}
 	unsigned char stream_id = buf[3];
-	unsigned int pes_length = buf[4] << 8 | buf[5];
+	//unsigned int pes_length = buf[4] << 8 | buf[5];
 	if (stream_id == 0xE0 || stream_id == 0xC0) {
 		pts_dts_flag = ((buf[7] >> 6) & 0x3);
 		if (pts_dts_flag == 0x2) {

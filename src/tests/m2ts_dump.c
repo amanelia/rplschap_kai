@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 	char *e;
 	pes_timestamp *pt;
 	if (argc < 3) {
-		printf("usage:m2ts_dump m2tsfile SPN(SourcePacketNumber)");
+		printf("usage:m2ts_dump m2tsfile SPN(SourcePacketNumber)\n");
 		return 0;
 	}
 	if (argv[1]) {
