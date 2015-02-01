@@ -190,12 +190,12 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 	for (i = 0; i < num_chapter; i++) {
 		pos2 = pos + 0x2E * i;
 		//mark_type
-		//pana == 0x5 sony == 0x4(original)
+		//pana == 0x05 sony == 0x04(original)
 		playitem[pos2    ] = 0x05;
 		//mark name length
 		playitem[pos2 + 1] = 0x00;
 		//Maker ID 
-		//pana == 0x3 sony == 0x8(original)
+		//pana == 0x103 sony == 0x108(original)
 		playitem[pos2 + 2] = 0x01;
 		playitem[pos2 + 3] = 0x03;
 		//ref to PlayItemID
@@ -349,9 +349,10 @@ int _write_keyframe(const char *filename) {
 		fprintf(stderr, "keyframeファイルオープンエラー.\n");
 		return 0;
 	}
-	for (i = 0; i < rp->num_timecode; i++) {
-		unsigned int keyframe = 0;
-		if (!_conv_timecode_to_keyframe(rp->timecode[i], &keyframe)) {
+	for (i = 0; i < rp->num_playlist_marks; i++) {
+		unsigned int  keyframe = 0;
+		playlist_mark pl       = rp->pl_mark[i];
+		if (!_conv_timecode_to_keyframe(pl.mark_time_stamp, &keyframe)) {
 			continue;
 		}
 		fprintf(fp, "%d\n", keyframe);
@@ -369,9 +370,10 @@ int _write_chapter(const char *filename) {
 		fprintf(stderr, "チャプターファイルオープンエラー.\n");
 		return 0;
 	}
-	for (i = 0; i < rp->num_timecode; i++) {
-		double time;
-		if (!_conv_timecode_to_chapter(rp->timecode[i], &time)) {
+	for (i = 0; i < rp->num_playlist_marks; i++) {
+		double time      = 0.0;
+		playlist_mark pl = rp->pl_mark[i];
+		if (!_conv_timecode_to_chapter(pl.mark_time_stamp, &time)) {
 			continue;
 		}
 		int hour = time / 3600;

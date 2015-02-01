@@ -32,10 +32,21 @@ int main(int argc, char **argv) {
 	printf("StartAddr:0x%lx\n", rpls->start_addr);
 	printf("EndAddr  :0x%lx\n", rpls->end_addr);
 	printf("len      :0x%lx\n", rpls->len);
-	printf("numOfChap:%d\n", rpls->num_timecode);
+	printf("numOfPlayListMarks:%d\n", rpls->num_playlist_marks);
 	int pos = 0;
-	for (i = 0; i < rpls->num_timecode; i++) {
-		printf("PTS %d    :%ld (0x%08lx)\n", i + 1, rpls->timecode[i], rpls->timecode[i]);
+	for (i = 0; i < rpls->num_playlist_marks; i++) {
+		playlist_mark pl = rpls->pl_mark[i];
+		printf("\t-----PlayListMark %02d -----\n", (i + 1));
+		printf("\tmark_type          :%d\n", pl.mark_type);
+		printf("\tmark_name_len      :%d\n", pl.mark_name_length);
+		printf("\tmaker_id           :0x%x\n", pl.maker_id);
+		printf("\tref_to_playitem_id :0x%x\n", pl.ref_to_playitem_id);
+		printf("\tmark_timestmp      :%ld (0x%08lx)\n", pl.mark_time_stamp, pl.mark_time_stamp);
+		printf("\tentry_es_pid       :0x%X\n", pl.entry_es_pid);
+		printf("\tref_thumbnail_index:0x%X\n", pl.ref_thumbnail_index);
+	}
+	for (i = 0; i < rpls->num_playlist_marks; i++) {
+		printf("PTS %d    :%ld (0x%08lx)\n", i + 1, rpls->pl_mark[i].mark_time_stamp, rpls->pl_mark[i].mark_time_stamp);
 		pos += 4;
 	}
 	free_rpls(rpls);

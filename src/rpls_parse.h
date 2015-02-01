@@ -1,6 +1,16 @@
 #ifndef _RPLS_PARSE_H_
 #define _RPLS_PARSE_H_
 typedef struct {
+	unsigned char mark_type;
+	unsigned char mark_name_length;
+	unsigned short maker_id;
+	unsigned short ref_to_playitem_id;
+	unsigned long mark_time_stamp;
+	unsigned short entry_es_pid;
+	unsigned short ref_thumbnail_index;
+} playlist_mark;
+
+typedef struct {
 	unsigned long playarea_address;
 	int cpi;
 	int num_list;
@@ -13,8 +23,8 @@ typedef struct {
 	unsigned long start_addr;
 	unsigned long end_addr;
 	unsigned long len;
-	int num_timecode;
-	unsigned long *timecode;
+	int num_playlist_marks;
+	playlist_mark *pl_mark;
 } rpls_t;
 
 int read_rpls(const char *filename, rpls_t *rp);

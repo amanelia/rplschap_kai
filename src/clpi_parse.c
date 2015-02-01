@@ -120,6 +120,7 @@ int read_clpi(const char *filename, clpi_t *cl) {
 			pos2 += 2 + len + 1;
 			memcpy(program.stream + j, &stream, sizeof(program_info_stream));
 		}
+		memcpy(prog->program + i, &program, sizeof(program_info_prog));
 		for (j = 0; j < program.num_group; j++) {
 			int len = buf[pos2];
 			pos2 += len + 1 + (len % 2 == 0) ? 1 : 0;
@@ -129,7 +130,6 @@ int read_clpi(const char *filename, clpi_t *cl) {
 			seq->fps = cur_fps;
 			break;
 		}
-		memcpy(prog->program + i, &program, sizeof(program_info_prog));
 	}
 	//CPI
 	cpi_t *cpi = cl->cpi;

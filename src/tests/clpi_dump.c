@@ -7,12 +7,14 @@ int main(int argc, char **argv) {
 	int i, j;
 	int show_coarse = 0;
 	int show_fine = 0;
+	int show_pts_spn = 0;
 	char *filename;
 	if (argc < 2) {
 		fprintf(stdout, "usage: clpi_dump:XXXXX.clpi\n");
 		fprintf(stdout, "options:\n");
 		fprintf(stdout, "\t-c :Show coarse list.\n");
 		fprintf(stdout, "\t-f :Show fine list.\n");
+		fprintf(stdout, "\t-v :Show PTS and SPN list.\n");
 		return 0;
 	}
 	for (i = 1; i < argc; i++) {
@@ -26,6 +28,10 @@ int main(int argc, char **argv) {
 			case 'f':
 				printf("Show Fine list.\n");
 				show_fine = 1;
+				break;
+			case 'v':
+				printf("Show PTS and SPN list.\n");
+				show_pts_spn = 1;
 				break;
 			}
 		} else {
@@ -113,7 +119,9 @@ int main(int argc, char **argv) {
 				printf("\t\t\tFine  :%d IOffset:%d PTS EP:%ld SPN EP:%ld\n", j, fine.i_end_position_offset, fine.pts_ep, fine.spn_ep);
 			}
 		}
-		gen_pts_spn(clpi, i, NULL);
+		if (show_pts_spn) {
+			gen_pts_spn(clpi, i, NULL);
+		}
 	}
 	free_clpi(clpi);
 	free(clpi);
