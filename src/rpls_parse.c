@@ -29,7 +29,7 @@ int read_rpls(const char *filename, rpls_t *rp) {
 
 	buf = (unsigned char *) malloc(length);
 	if (!buf) {
-		fprintf(stderr, "unallocated memory.\n");
+		fprintf(stderr, "Unallocated memory.\n");
 		return 0;
 	}
 	memset(buf, 0, length);

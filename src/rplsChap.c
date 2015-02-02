@@ -18,6 +18,8 @@ static const unsigned int fps_den[] ={1, 1001, 1, 1, 1001, 1, 1, 1001, 1, 1, 1, 
 rpls_t *rp;
 clpi_t *cl;
 
+int verbose = 0;
+
 int frame_rate_type = -1;
 //Chapters
 int num_chapter;
@@ -120,7 +122,7 @@ int _conv_timecode_to_keyframe(const unsigned long timecode, unsigned int *frame
 int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl) {
 	FILE *fp;
 	unsigned char *inbuf;
-	int in_size, out_size;
+	unsigned long in_size, out_size;
 	unsigned char *outbuf;
 	int i,pos;
 	fp = fopen(infile, "rb");
@@ -141,23 +143,25 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 		return 0;
 	}
 	fclose(fp);
-	unsigned long start_addr = get32bit(inbuf, 0x0C);
+	unsigned long start_addr   = get32bit(inbuf, 0x0C);
 	unsigned long private_addr = get32bit(inbuf, 0x10);
-	printf("inbuf_size  :0x%x\n", in_size);
-	printf("StartAddr   :0x%lx\n", start_addr);
-	printf("PrivAddr    :0x%lx\n", private_addr);
 	int size = 46;
-	unsigned long playitem_len = 6 + size * num_chapter;
-	printf("should write:0x%lx\n", playitem_len);
-	unsigned char *playitem = malloc(sizeof(unsigned char) * playitem_len);
-	memset(playitem, 0, sizeof(unsigned char) * playitem_len);
-	if (!playitem) {
+	unsigned long pl_mark_len    = 6 + size * num_chapter;
+	unsigned long priv_data_addr = start_addr + pl_mark_len;
+	out_size = in_size + pl_mark_len;
+	if (verbose) {
+		printf("inbuf_size  :0x%lx\n", in_size);
+		printf("outbuf_size :0x%lx\n", in_size + pl_mark_len);
+		printf("StartAddr   :0x%lx\n", start_addr);
+		printf("PlayListMark:0x%lx\n", pl_mark_len);
+		printf("PrivAddr    :0x%lx\n", private_addr);
+	}
+	unsigned char *pl_mark = malloc(sizeof(unsigned char) * pl_mark_len);
+	if (!pl_mark) {
 		fprintf(stderr, "Unallocated memory.\n");
 		return 0;
 	}
-	unsigned long priv_data_addr = start_addr + playitem_len;
-	printf("outbuf_size:0x%lx\n", in_size + playitem_len);
-	out_size = in_size + playitem_len;
+	memset(pl_mark, 0, sizeof(unsigned char) * pl_mark_len);
 	outbuf = malloc(sizeof(unsigned char) * out_size);
 	if (!outbuf) {
 		fprintf(stderr, "Unallocated memory.\n");
@@ -169,7 +173,7 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 		outbuf[i] = inbuf[i];
 	}
 
-	//MarkerPrivateData address (pana)
+	//MakerPrivateData address (pana)
 	//書き込まなくてもいい？
 	//outbuf[0x10] = (priv_data_addr & 0xFF000000) >> 24;
 	//outbuf[0x11] = (priv_data_addr & 0x00FF0000) >> 16;
@@ -178,46 +182,48 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 	//PlayListMark
 	pos = 0;
 	//PlayListMark length
-	playitem[pos]     = ((playitem_len - 4) & 0xFF000000) >> 24;
-	playitem[pos + 1] = ((playitem_len - 4) & 0x00FF0000) >> 16;
-	playitem[pos + 2] = ((playitem_len - 4) & 0x0000FF00) >> 8;
-	playitem[pos + 3] = ((playitem_len - 4) & 0x000000FF);
+	pl_mark[pos]     = ((pl_mark_len - 4) & 0xFF000000) >> 24;
+	pl_mark[pos + 1] = ((pl_mark_len - 4) & 0x00FF0000) >> 16;
+	pl_mark[pos + 2] = ((pl_mark_len - 4) & 0x0000FF00) >> 8;
+	pl_mark[pos + 3] = ((pl_mark_len - 4) & 0x000000FF);
 	//number_of_PlayList_marks
-	playitem[pos + 4] = (num_chapter & 0xFF00) >> 8;
-	playitem[pos + 5] = (num_chapter & 0x00FF);
+	pl_mark[pos + 4] = (num_chapter & 0xFF00) >> 8;
+	pl_mark[pos + 5] = (num_chapter & 0x00FF);
 	pos += 6;
 	int pos2 = pos;
 	for (i = 0; i < num_chapter; i++) {
 		pos2 = pos + 0x2E * i;
 		//mark_type
+		//0x01 0x0A 0x0B 0x04 と様々なバリエーションあり？
+		//0x05はChapter markと呼ぶらしい
 		//pana == 0x05 sony == 0x04(original)
-		playitem[pos2    ] = 0x05;
+		pl_mark[pos2    ] = 0x05;
 		//mark name length
-		playitem[pos2 + 1] = 0x00;
+		pl_mark[pos2 + 1] = 0x00;
 		//Maker ID 
 		//pana == 0x103 sony == 0x108(original)
-		playitem[pos2 + 2] = 0x01;
-		playitem[pos2 + 3] = 0x03;
+		pl_mark[pos2 + 2] = 0x01;
+		pl_mark[pos2 + 3] = 0x03;
 		//ref to PlayItemID
-		playitem[pos2 + 4] = 0x00;
-		playitem[pos2 + 5] = 0x00;
+		pl_mark[pos2 + 4] = 0x00;
+		pl_mark[pos2 + 5] = 0x00;
 		//mark_time_stamp
-		playitem[pos2 + 6] = ((chapter_timecode[i] & 0xFF000000) >> 24);
-		playitem[pos2 + 7] = ((chapter_timecode[i] & 0x00FF0000) >> 16);
-		playitem[pos2 + 8] = ((chapter_timecode[i] & 0x0000FF00) >> 8 );
-		playitem[pos2 + 9] = (chapter_timecode[i] & 0x000000FF);
+		pl_mark[pos2 + 6] = ((chapter_timecode[i] & 0xFF000000) >> 24);
+		pl_mark[pos2 + 7] = ((chapter_timecode[i] & 0x00FF0000) >> 16);
+		pl_mark[pos2 + 8] = ((chapter_timecode[i] & 0x0000FF00) >> 8 );
+		pl_mark[pos2 + 9] =  (chapter_timecode[i] & 0x000000FF);
 		//Entry ES_PID (must be 0xFFFF)
-		playitem[pos2 + 10] = 0xFF;
-		playitem[pos2 + 11] = 0xFF;
+		pl_mark[pos2 + 10] = 0xFF;
+		pl_mark[pos2 + 11] = 0xFF;
 		//ref_thumbnail_index (must be 0xFFFF)
-		playitem[pos2 + 12] = 0xFF;
-		playitem[pos2 + 13] = 0xFF;
+		pl_mark[pos2 + 12] = 0xFF;
+		pl_mark[pos2 + 13] = 0xFF;
 	}
 	//debug
-	//print_hex(playitem, playitem_len);
-	memcpy(outbuf + start_addr, playitem, playitem_len);
+	//print_hex(pl_mark, pl_mark_len);
+	memcpy(outbuf + start_addr, pl_mark, pl_mark_len);
 	pos = priv_data_addr;
-	//MarkerPrivateData (pana)
+	//MakerPrivateData (pana)
 	unsigned long priv_data_len = out_size - pos - 6;
 	outbuf[priv_data_addr    ] = (priv_data_len & 0xFF000000) >> 24;
 	outbuf[priv_data_addr + 1] = (priv_data_len & 0x00FF0000) >> 16;
@@ -235,7 +241,7 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 	}
 	fclose(fp);
 
-	free(playitem);
+	free(pl_mark);
 	free(outbuf);
 	free(inbuf);
 	return 1;
@@ -243,15 +249,15 @@ int _write_rpls(const char *infile, const char *outfile, rpls_t *rp, clpi_t *cl)
 
 int _read_keyframe(const char *filename) {
 	FILE *fp;
-	int i, line_count;
+	int i;
 	char buf[512];
 	char *e;
+	int line_count = 0;
 	fp = fopen(filename, "rt");
 	if (!fp) {
 		fprintf(stderr, "keyframeファイルオープンエラー.\n");
 		return 0;
 	}
-	line_count = 0;
 	while (fgets(buf, sizeof(buf), fp)) {
 		line_count++;
 	}
@@ -271,14 +277,16 @@ int _read_keyframe(const char *filename) {
 	}
 	rewind(fp);
 	num_keyframe = line_count;
-	num_chapter = line_count;
+	num_chapter  = line_count;
 	i = 0;
 	while (fgets(buf, sizeof(buf), fp)) {
 		unsigned int key = strtoul(buf, &e, 10);
 		unsigned long timecode = 0L;
 		if (_conv_keyframe_to_timecode(key, &timecode)) {
 			//debug
-			//printf("keyframe:%d time:%ld\n", key, timecode);
+			if (verbose) {
+				printf("keyframe:%d time:%ld\n", key, timecode);
+			}
 			memcpy(chapter_timecode + i, &timecode, sizeof(unsigned long));
 		}
 		i++;
@@ -327,8 +335,9 @@ int _read_chapter(const char *filename) {
 		double time = ms * 0.001 + s + m * 60 + h * 60 * 60;
 		unsigned long timecode = 0L;
 		if (_conv_chapter_to_timecode(time, &timecode)) {
-			//debug
-			//printf("time:%f PTS:%ld(0x%lx)\n", time, timecode, timecode);
+			if (verbose) {
+				printf("time:%f PTS:%ld(0x%lx)\n", time, timecode, timecode);
+			}
 			memcpy(chapter_timecode + i, &timecode, sizeof(unsigned long));
 			i++;
 		}
@@ -354,6 +363,9 @@ int _write_keyframe(const char *filename) {
 		playlist_mark pl       = rp->pl_mark[i];
 		if (!_conv_timecode_to_keyframe(pl.mark_time_stamp, &keyframe)) {
 			continue;
+		}
+		if (verbose) {
+			printf("keyframe%02d  %d\n", (i + 1), keyframe);
 		}
 		fprintf(fp, "%d\n", keyframe);
 	}
@@ -385,6 +397,9 @@ int _write_chapter(const char *filename) {
 		int msec = time * 1000;
 		sprintf(buf, "%02d:%02d:%02d.%03d", hour, min, sec, msec);
 		fprintf(fp, "%s\n", buf);
+		if (verbose) {
+			printf("Chapter%02d  %s\n", (i + 1), buf);
+		}
 	}
 	fclose(fp);
 	return 1;
@@ -445,7 +460,7 @@ int main(int argc, char **argv) {
 					printf("timecodeファイル：%s\n", chapterfile);
 					type = 2;
 				} else {
-					printf("unknown\n");
+					printf("不正な出力オプションです。\n");
 				}
 				next = 1;
 				break;
@@ -476,6 +491,9 @@ int main(int argc, char **argv) {
 				mode = 2;
 				type = 1;
 				next = 1;
+				break;
+			case 'v':
+				verbose = 1;
 				break;
 			default:
 				fprintf(stderr, "無効な引数が選択されました。\n");
