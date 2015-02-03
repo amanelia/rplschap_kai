@@ -11,6 +11,12 @@
 #include "rpls_parse.h"
 #include "clpi_parse.h"
 #include "util.h"
+#ifndef _WIN32
+#include <limits.h>
+#else
+#define PATH_MAX 260
+#define realpath(A, B) _fullpath((B), (A), PATH_MAX)
+#endif
 
 static const unsigned int fps_num[] ={0, 24000, 24, 25, 30000, 30, 50, 60000, 60, 0, 0, 0, 0, 0, 0};
 static const unsigned int fps_den[] ={1, 1001, 1, 1, 1001, 1, 1, 1001, 1, 1, 1, 1, 1, 1, 1};
@@ -405,13 +411,13 @@ int _write_chapter(const char *filename) {
 	return 1;
 }
 
-void show_usage(char *path) {
+void show_usage() {
 	printf("チャプター情報を追加。\n");
-	printf("usage: %s rplsfile dstrplsfile -k file.keyframe\n", path);
-	printf("usage: %s rplsfile dstrplsfile -t file.time\n", path);
+	printf("usage: rplsChap [rplsfile] [dstrplsfile] -k [file.keyframe]\n");
+	printf("usage: rplsChap [rplsfile] [dstrplsfile] -t [file.time]\n");
 	printf("チャプター情報を抽出。\n");
-	printf("usage: %s rplsfile -ok file.keyframe\n", path);
-	printf("usage: %s rplsfile -ot file.time\n", path);
+	printf("usage: rplsChap [rplsfile] -ok [file.keyframe]\n");
+	printf("usage: rplsChap [rplsfile] -ot [file.time]\n");
 }
 
 int main(int argc, char **argv) {
@@ -422,8 +428,10 @@ int main(int argc, char **argv) {
 	//type 1:keyframe
 	//type 2:timecode
 	int type = 0;
-	char *rplsfile     = '\0';
-	char *outrplsfile  = '\0';
+	int infile = 0;
+	char rplsfile[PATH_MAX];
+	int outfile = 0;
+	char outrplsfile[PATH_MAX];
 	char *parent_dir   = '\0';
 	char *clpifile     = '\0';
 	char *m2tsfile     = '\0';
@@ -433,7 +441,7 @@ int main(int argc, char **argv) {
 		printf("rplsChap kai ver. 1.0\n");
 		printf("Author: amanelia\n");
 		printf("Orignal software: rplsChap\n");
-		show_usage(argv[0]);
+		show_usage();
 		return 0;
 	}
 	for (i = 1; i < argc; i++) {
@@ -500,18 +508,19 @@ int main(int argc, char **argv) {
 				return 0;
 			}
 		} else {
-			if (rplsfile && !outrplsfile) {
-				outrplsfile = argv[i];
-				printf("出力rplsファイルパス：%s\n", outrplsfile);
-			}
-			if (!rplsfile) {
-				rplsfile = argv[i];
+			if (!infile && realpath(argv[i], rplsfile)) {
 				printf("入力rplsファイルパス：%s\n", rplsfile);
+				infile = 1;
+				continue;
+			}
+			if ((infile && !outfile) && realpath(argv[i], outrplsfile)) {
+				printf("出力rplsファイルパス：%s\n", outrplsfile);
+				outfile = 1;
 			}
 		}
 		if (next) i++;
 	}
-	if (!rplsfile) {
+	if (!infile) {
 		fprintf(stderr, "rplsファイルが指定されていません。\n");
 		return 0;
 	}
@@ -569,6 +578,10 @@ int main(int argc, char **argv) {
 		}
 		printf("チャプターファイルを書き出しました。\n");
 	} else if (mode == 2) {
+		if (!outfile) {
+			fprintf(stderr, "出力先rplsファイルが指定されていません。\n");
+			return 0;
+		}
 		if (type == 1 && !_read_keyframe(keyframefile)) {
 			fprintf(stderr, "keyframeファイルの読み込みに失敗しました。\n");
 			return 0;
