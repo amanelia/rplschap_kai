@@ -13,7 +13,9 @@
 #include "util.h"
 #ifndef _WIN32
 #include <limits.h>
+const char *pathseparator = "/";
 #else
+const char *pathseparator = "\\";
 #define PATH_MAX 260
 #define realpath(A, B) _fullpath((B), (A), PATH_MAX)
 #endif
@@ -437,6 +439,7 @@ int main(int argc, char **argv) {
 	char *m2tsfile     = '\0';
 	char *chapterfile  = '\0';
 	char *keyframefile = '\0';
+	char bdav_dir[PATH_MAX];
 	if (argc < 2) {
 		printf("rplsChap kai ver. 1.0\n");
 		printf("Author: amanelia\n");
@@ -534,24 +537,35 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	printf("clpi番号：%s\n", rp->clpi_filename);
-	if (!strstr(rplsfile, "/BDAV/")) {
+	strcat(bdav_dir, pathseparator);
+	strcat(bdav_dir, "BDAV");
+	strcat(bdav_dir, pathseparator);
+	if (!strstr(rplsfile, bdav_dir)) {
 		fprintf(stderr,"正常なBDAVディレクトリではありません。\n");
 		fprintf(stderr, "正しいディレクトリ構成にしてください。\n");
 		return 0;
 	}
-	int parent_dir_len = strlen(rplsfile) - strlen(strstr(rplsfile, "/BDAV/"));
+	int parent_dir_len = strlen(rplsfile) - strlen(strstr(rplsfile, bdav_dir));
 	parent_dir = malloc(parent_dir_len + 1);
 	if (!parent_dir) {
 		fprintf(stderr, "Unallocated memory.\n");
 		return 0;
 	}
 	memset(parent_dir, 0, parent_dir_len + 1);
-	parent_dir = strncpy(parent_dir, rplsfile, strlen(rplsfile) - strlen(strstr(rplsfile, "/BDAV/")));
+	parent_dir = strncpy(parent_dir, rplsfile, strlen(rplsfile) - strlen(strstr(rplsfile, bdav_dir)));
 	clpifile = malloc(parent_dir_len + strlen("/BDAV/CLIPINF/") + 5 + strlen(".clpi") + 1);
-	m2tsfile = malloc(parent_dir_len + strlen("/BDAV/STREAM/") + 5 + strlen(".m2ts"));
-
-	sprintf(clpifile, "%s/%s/%s.%s", parent_dir, "BDAV/CLIPINF", rp->clpi_filename, "clpi");
-	sprintf(m2tsfile, "%s/%s/%s.%s", parent_dir, "BDAV/STREAM", rp->clpi_filename, "m2ts");
+	m2tsfile = malloc(parent_dir_len + strlen("/BDAV/STREAM/") + 5 + strlen(".m2ts") + 1);
+	strcpy(clpifile, parent_dir);
+	strcat(clpifile, bdav_dir);
+	strcpy(m2tsfile, clpifile);
+	strcat(clpifile, "CLIPINF");
+	strcat(clpifile, pathseparator);
+	strcat(clpifile, rp->clpi_filename);
+	strcat(clpifile, ".clpi");
+	strcat(m2tsfile, "STREAM");
+	strcat(m2tsfile, pathseparator);
+	strcat(m2tsfile, rp->clpi_filename);
+	strcat(m2tsfile, ".m2ts");
 	cl = malloc(sizeof(clpi_t));
 	if (!cl) {
 		fprintf(stderr, "Unallocated memory.\n");

@@ -16,8 +16,8 @@ typedef struct {
 	int num_list;
 	int connection;
 	int stc_id;
-	char clpi_filename[6];
-	char clpi_codec_identifier[5];
+	char *clpi_filename;
+	char *clpi_codec_identifier;
 	unsigned long time_in;
 	unsigned long time_out;
 	unsigned long start_addr;

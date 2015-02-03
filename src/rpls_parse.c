@@ -37,9 +37,16 @@ int read_rpls(const char *filename, rpls_t *rp) {
 	rp->playarea_address = get32bit(buf, 0x08);
 	rp->cpi              = buf[rp->playarea_address + 5] & 0x01;
 	rp->num_list         = get16bit(buf, rp->playarea_address + 6);
-	memcpy(rp->clpi_filename, &buf[0] + rp->playarea_address + 12, 5);
-	rp->clpi_filename[6] = '\0';
-	memcpy(rp->clpi_codec_identifier, &buf[0] + rp->playarea_address + 17, 4);
+	rp->clpi_filename         = malloc(sizeof(char) * (5 + 1));
+	rp->clpi_codec_identifier = malloc(sizeof(char) * (4 + 1));
+	if (!rp->clpi_filename || !rp->clpi_codec_identifier) {
+		fprintf(stderr, "Unallocated memory.\n");
+		return 0;
+	}
+	memset(rp->clpi_filename, 0, sizeof(char) * (5 + 1));
+	memset(rp->clpi_codec_identifier, 0, sizeof(char) * (4 + 1));
+	memcpy(rp->clpi_filename, buf + rp->playarea_address + 12, 5);
+	memcpy(rp->clpi_codec_identifier, buf + rp->playarea_address + 17, 4);
 	pos = rp->playarea_address + 8 + 2;
 	for (i = 0; i < rp->num_list; i++) {
 		rp->connection = buf[pos + 12];
@@ -76,6 +83,8 @@ int read_rpls(const char *filename, rpls_t *rp) {
 }
 
 void free_rpls(rpls_t *rp) {
+	free(rp->clpi_filename);
+	free(rp->clpi_codec_identifier);
 	free(rp->pl_mark);
 	free(rp);
 }
