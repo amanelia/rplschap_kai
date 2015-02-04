@@ -1,0 +1,8 @@
+*.o
+*.obj
+*.swp
+*.exe
+rplsChap
+src/tests/clpi_dump
+src/tests/m2ts_dump
+src/tests/rpls_dump
