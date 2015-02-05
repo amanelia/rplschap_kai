@@ -23,7 +23,7 @@ unsigned long _parse_timestamp(const unsigned char *buf) {
 }
 
 int _parse_pes(const unsigned char *buf, const unsigned long spn, pes_timestamp *pt) {
-	unsigned char pts_dts_flag;
+	unsigned char pts_dts_flag = 0x0;
 	unsigned long pts = 0L;
 	unsigned long dts = 0L;
 	unsigned int pes_prefix = buf[0] << 16 | buf[1] << 8 | buf[2];	
