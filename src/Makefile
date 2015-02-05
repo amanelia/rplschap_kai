@@ -1,7 +1,6 @@
-#CC = i686-w64-mingw32-gcc
 CC = gcc
-CFLAGS = -g -Wall
-LDFLAGS = -g
+CFLAGS = -O2 -Wall
+LDFLAGS = -O2
 OBJS = rpls_parse.o \
 	   clpi_parse.o \
 	   m2ts_parse.o \
@@ -10,7 +9,7 @@ OBJS = rpls_parse.o \
 
 PROGRAM = rplsChap
 
-all: $(PROGRAM) test
+all: $(PROGRAM)
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
@@ -23,4 +22,3 @@ test:
 
 clean:
 	rm -f $(OBJS) $(PROGRAM)
-	$(MAKE) -C tests clean

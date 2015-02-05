@@ -1,7 +1,6 @@
-#CC = i686-w64-mingw32-gcc
 CC = gcc
-CFLAGS = -g -Wall
-LDFLAGS = -g
+CFLAGS = -O2 -Wall
+LDFLAGS = -O2
 DEPEND_RPLS_OBJS = ../util.o \
 			       ../rpls_parse.o
 DEPEND_CLPI_OBJS = ../util.o \
