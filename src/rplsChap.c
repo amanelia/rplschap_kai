@@ -516,7 +516,8 @@ int main(int argc, char **argv) {
 				infile = 1;
 				continue;
 			}
-			if ((infile && !outfile) && realpath(argv[i], outrplsfile)) {
+			if (infile && !outfile) {
+				strcpy(outrplsfile, argv[i]);
 				printf("出力rplsファイルパス：%s\n", outrplsfile);
 				outfile = 1;
 			}
